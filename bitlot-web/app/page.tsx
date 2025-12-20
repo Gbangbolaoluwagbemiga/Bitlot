@@ -1,65 +1,149 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState } from 'react';
+import { userSession, authenticate } from '@/lib/stacks';
+import Spinner from '@/components/Spinner';
+import { openContractCall } from '@stacks/connect';
+import { StacksMocknet } from '@stacks/network';
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [spinning, setSpinning] = useState(false);
+  const [result, setResult] = useState<number | null>(null);
+  const [txId, setTxId] = useState<string>('');
+
+  useEffect(() => {
+    setMounted(true);
+    if (userSession.isUserSignedIn()) {
+      setUser(userSession.loadUserData());
+    }
+  }, []);
+
+  const handleConnect = () => {
+    authenticate();
+  };
+
+  const handleLogout = () => {
+    userSession.signUserOut('/');
+  };
+
+  const handleSpin = async () => {
+    setSpinning(true);
+    setResult(null);
+    setTxId('');
+
+    const network = new StacksMocknet({ url: 'http://localhost:3999' });
+
+    await openContractCall({
+      network,
+      contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
+      contractName: 'bitlot',
+      functionName: 'play',
+      functionArgs: [],
+      onFinish: (data) => {
+        console.log('Transaction finished:', data);
+        setTxId(data.txId);
+        // In a real app with Chainhooks, we would wait for the event via websocket/polling.
+        // For this demo, we can simulate the result or poll the tx status.
+        // Let's poll for the transaction receipt to get the result if possible, 
+        // or just rely on the event from Chainhook (which we need to fetch).
+        
+        // Since we don't have a backend pushing events to us yet, 
+        // we will simulate the "spinning" state for a few seconds 
+        // and then show a random result or fetch the actual result if we can.
+        
+        // Polling logic would go here.
+        // For now, let's keep spinning until we decide to stop (simulating async wait).
+        setTimeout(() => {
+            // Check if we can get the transaction result.
+            // For the demo, we'll stop at a random spot or 0 if we can't confirm.
+            // Ideally, the chainhook would update a DB and we poll that DB.
+            setSpinning(false);
+            // Simulate a result for visual feedback as we can't easily read the tx result 
+            // from the client without an explorer API or complex polling.
+            // BUT, the contract returns (ok result). 
+            // We can read the tx result using Stacks API.
+            checkResult(data.txId);
+        }, 2000);
+      },
+      onCancel: () => {
+        setSpinning(false);
+      },
+    });
+  };
+
+  const checkResult = async (txId: string) => {
+    // Poll for status
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`http://localhost:3999/extended/v1/tx/${txId}`);
+        const data = await res.json();
+        if (data.tx_status === 'success') {
+          clearInterval(interval);
+          setSpinning(false);
+          // The result is in tx_result.
+          // Format: (ok uX)
+          const resultHex = data.tx_result.repr; // e.g. "(ok u5)"
+          const match = resultHex.match(/\(ok u(\d+)\)/);
+          if (match) {
+            setResult(parseInt(match[1]));
+          }
+        } else if (data.tx_status === 'abort_by_response' || data.tx_status === 'abort_by_post_condition') {
+            clearInterval(interval);
+            setSpinning(false);
+            alert('Transaction failed');
+        }
+      } catch (e) {
+        // ignore errors while pending
+      }
+    }, 1000);
+  };
+
+  if (!mounted) return null;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900 text-white">
+      <h1 className="text-4xl font-bold mb-8">🎰 BitLot 🎰</h1>
+      
+      {!user ? (
+        <button
+          onClick={handleConnect}
+          className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"
+        >
+          Connect Wallet
+        </button>
+      ) : (
+        <div className="flex flex-col items-center gap-8">
+          <div className="text-xl">Welcome, {user.profile.stxAddress.testnet}</div>
+          
+          <Spinner spinning={spinning} result={result} />
+          
+          <button
+            onClick={handleSpin}
+            disabled={spinning}
+            className={`bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full text-xl transition-transform ${spinning ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {spinning ? 'Spinning...' : 'SPIN (1 STX)'}
+          </button>
+          
+          {result !== null && (
+            <div className="text-2xl font-bold text-yellow-400 animate-bounce">
+              You won item {result}!
+            </div>
+          )}
+
+          {txId && (
+            <div className="text-xs text-gray-400">
+              Tx: {txId}
+            </div>
+          )}
+          
+          <button onClick={handleLogout} className="text-sm underline text-gray-400 mt-8">
+            Disconnect
+          </button>
         </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
