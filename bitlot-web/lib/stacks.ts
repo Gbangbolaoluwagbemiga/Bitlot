@@ -1,10 +1,14 @@
 import { AppConfig, UserSession, showConnect } from '@stacks/connect';
 import { STACKS_MAINNET, STACKS_TESTNET, STACKS_MOCKNET } from '@stacks/network';
 
-export const appConfig = new AppConfig(['store_write', 'publish_data']);
-export const userSession = new UserSession({ appConfig });
+const appConfig = new AppConfig(['store_write', 'publish_data']);
+
+export function getUserSession() {
+  return new UserSession({ appConfig });
+}
 
 export function authenticate() {
+  const userSession = getUserSession();
   showConnect({
     appDetails: {
       name: 'BitLot',
@@ -29,3 +33,4 @@ export function getNetwork() {
       return STACKS_MOCKNET;
   }
 }
+
