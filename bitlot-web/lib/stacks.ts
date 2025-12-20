@@ -1,5 +1,5 @@
 import { AppConfig, UserSession, showConnect } from '@stacks/connect';
-import { StacksTestnet, StacksMocknet } from '@stacks/network';
+import { StacksMainnet, StacksTestnet, StacksMocknet } from '@stacks/network';
 
 export const appConfig = new AppConfig(['store_write', 'publish_data']);
 export const userSession = new UserSession({ appConfig });
@@ -18,5 +18,14 @@ export function authenticate() {
   });
 }
 
-// Use Devnet/Mocknet for local development
-export const network = new StacksMocknet({ url: 'http://localhost:3999' });
+export function getNetwork() {
+  const network = process.env.NEXT_PUBLIC_NETWORK || 'mocknet';
+  switch (network) {
+    case 'mainnet':
+      return new StacksMainnet();
+    case 'testnet':
+      return new StacksTestnet();
+    default:
+      return new StacksMocknet({ url: 'http://localhost:3999' });
+  }
+}

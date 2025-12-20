@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { userSession, authenticate } from '@/lib/stacks';
+import { userSession, authenticate, getNetwork } from '@/lib/stacks';
 import Spinner from '@/components/Spinner';
 import { openContractCall } from '@stacks/connect';
-import { StacksMocknet } from '@stacks/network';
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -33,15 +32,17 @@ export default function Home() {
     setResult(null);
     setTxId('');
 
-    const network = new StacksMocknet({ url: 'http://localhost:3999' });
+    const network = getNetwork();
+    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM';
+    const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'bitlot';
 
     await openContractCall({
       network,
-      contractAddress: 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM',
-      contractName: 'bitlot',
+      contractAddress,
+      contractName,
       functionName: 'play',
       functionArgs: [],
-      onFinish: (data) => {
+      onFinish: (data: any) => {
         console.log('Transaction finished:', data);
         setTxId(data.txId);
         // In a real app with Chainhooks, we would wait for the event via websocket/polling.
