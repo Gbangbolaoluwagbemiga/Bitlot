@@ -2,7 +2,7 @@
 ;; summary: A standard SIP-010 fungible token for BitLot
 ;; description: Used for lottery rewards
 
-(impl-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip-010-trait)
+(impl-trait .sip-010-trait-ft-standard.sip-010-trait)
 
 (define-fungible-token bitlot-token u1000000000000) ;; Max supply with 6 decimals
 

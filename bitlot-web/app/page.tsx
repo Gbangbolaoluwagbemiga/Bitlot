@@ -118,6 +118,16 @@ export default function Home() {
         <div className="flex flex-col items-center gap-8">
           <div className="text-xl">Welcome, {user.profile.stxAddress.testnet}</div>
           
+          <div className="grid grid-cols-4 gap-2 text-sm mb-4">
+            <div className="p-2 bg-gray-800 rounded">1: 10 BLOT</div>
+            <div className="p-2 bg-gray-800 rounded">2: 20 BLOT</div>
+            <div className="p-2 bg-gray-800 rounded">3: 50 BLOT</div>
+            <div className="p-2 bg-gray-800 rounded">5: 100 BLOT</div>
+            <div className="p-2 bg-gray-800 rounded">6: 200 BLOT</div>
+            <div className="p-2 bg-gray-800 rounded">7: 500 BLOT</div>
+            <div className="p-2 bg-gray-800 rounded col-span-2 text-red-400">0 & 4: No Reward</div>
+          </div>
+
           <Spinner spinning={spinning} result={result} />
           
           <button
@@ -125,12 +135,16 @@ export default function Home() {
             disabled={spinning}
             className={`bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full text-xl transition-transform ${spinning ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}`}
           >
-            {spinning ? 'Spinning...' : 'SPIN (1 STX)'}
+            {spinning ? 'Spinning...' : 'SPIN (0.01 STX)'}
           </button>
           
           {result !== null && (
-            <div className="text-2xl font-bold text-yellow-400 animate-bounce">
-              You won item {result}!
+            <div className="text-2xl font-bold text-yellow-400 animate-bounce text-center">
+              {result === 0 || result === 4 ? (
+                <span className="text-red-500">Better luck next time!</span>
+              ) : (
+                <span>You won {[0, 10, 20, 50, 0, 100, 200, 500][result]} BLOT tokens!</span>
+              )}
             </div>
           )}
 

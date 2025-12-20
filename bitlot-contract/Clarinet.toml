@@ -5,15 +5,21 @@ authors = []
 telemetry = true
 cache_dir = './.cache'
 requirements = []
-[contracts.bitlot]
-path = 'contracts/bitlot.clar'
+[contracts.sip-010-trait-ft-standard]
+path = 'contracts/sip-010-trait-ft-standard.clar'
 clarity_version = 2
 epoch = '2.5'
 
 [contracts.bitlot-token]
 path = 'contracts/bitlot-token.clar'
-clarity_version = 4
-epoch = 'latest'
+clarity_version = 2
+epoch = '2.5'
+
+[contracts.bitlot]
+path = 'contracts/bitlot.clar'
+clarity_version = 2
+epoch = '2.5'
+
 [repl.analysis]
 passes = ['check_checker']
 
