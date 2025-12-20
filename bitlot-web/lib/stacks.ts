@@ -1,7 +1,5 @@
 import { AppConfig, UserSession, showConnect } from '@stacks/connect';
-import { StacksMainnet, StacksTestnet, StacksMocknet } from '@stacks/network';
-
-
+import { STACKS_MAINNET, STACKS_TESTNET, STACKS_MOCKNET } from '@stacks/network';
 
 export const appConfig = new AppConfig(['store_write', 'publish_data']);
 export const userSession = new UserSession({ appConfig });
@@ -24,10 +22,10 @@ export function getNetwork() {
   const network = process.env.NEXT_PUBLIC_NETWORK || 'mocknet';
   switch (network) {
     case 'mainnet':
-      return new StacksMainnet();
+      return STACKS_MAINNET;
     case 'testnet':
-      return new StacksTestnet();
+      return STACKS_TESTNET;
     default:
-      return new StacksMocknet({ url: 'http://localhost:3999' });
+      return STACKS_MOCKNET;
   }
 }
