@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { userSession, authenticate, getNetwork } from '@/lib/stacks';
+import { getUserSession, authenticate, getNetwork } from '@/lib/stacks';
 import Spinner from '@/components/Spinner';
 import { openContractCall } from '@stacks/connect';
 
@@ -14,6 +14,7 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+    const userSession = getUserSession();
     if (userSession.isUserSignedIn()) {
       setUser(userSession.loadUserData());
     }
@@ -24,7 +25,7 @@ export default function Home() {
   };
 
   const handleLogout = () => {
-    userSession.signUserOut('/');
+    getUserSession().signUserOut('/');
   };
 
   const handleSpin = async () => {
