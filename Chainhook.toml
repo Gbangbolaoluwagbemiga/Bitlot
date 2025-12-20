@@ -1,0 +1,23 @@
+# Chainhook configuration
+[chainhook]
+name = "bitlot-hook"
+version = 1
+
+[chainhook.networks.devnet]
+url = "http://localhost:3999"
+
+[[chainhook.predicates]]
+network = "devnet"
+chain = "stacks"
+uuid = "1"
+name = "bitlot-events"
+version = 1
+
+[chainhook.predicates.scope]
+protocol = "stacks"
+contract_id = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.bitlot"
+
+[[chainhook.predicates.actions]]
+method = "http_post"
+url = "http://localhost:3000/api/chainhook"
+authorization_header = "Bearer secret"

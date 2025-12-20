@@ -21,9 +21,9 @@
             ;; Note: This is not secure for high-stakes lotteries but sufficient for this demo.
             ;; In production, use Chainlink VRF or Stacks VRF if available/appropriate.
             (random-source (sha256 (unwrap-panic (to-consensus-buff? { height: block-height, player: sender, nonce: current-spins }))))
-            (random-val (buff-to-uint-be (element-at? random-source u0)))
+            (random-val (buff-to-uint-be (unwrap-panic (element-at? random-source u0))))
             ;; Modulo 8 for 8 slots in the spinner
-            (result (mod (default-to u0 random-val) u8))
+            (result (mod random-val u8))
         )
         ;; Transfer STX from user to contract
         (try! (stx-transfer? TICKET_PRICE sender (as-contract tx-sender)))
