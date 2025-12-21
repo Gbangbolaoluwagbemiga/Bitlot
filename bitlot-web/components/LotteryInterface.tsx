@@ -39,6 +39,13 @@ export default function LotteryInterface() {
     const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || 'SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP';
     const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'bitlot-v2';
 
+    // Define post-condition: User transfers 0.01 STX (10,000 uSTX)
+    // We use the address from the current network (testnet or mainnet)
+    const stxAddress = user.profile.stxAddress.testnet || user.profile.stxAddress.mainnet;
+    const postConditions = [
+      Pc.principal(stxAddress).willSendEq(10000).ustx()
+    ];
+
     try {
       await openContractCall({
         network,
@@ -46,12 +53,12 @@ export default function LotteryInterface() {
         contractName,
         functionName: 'play',
         functionArgs: [],
+        postConditions,
         onFinish: (data: any) => {
           console.log('Transaction finished:', data);
           setTxId(data.txId);
           toast.info('Spinning the wheel... waiting for confirmation');
           
-          // In a real app, we would wait for the chainhook or poll heavily.
           // Here we just wait a bit and then start polling.
           setTimeout(() => {
               checkResult(data.txId);
@@ -66,6 +73,50 @@ export default function LotteryInterface() {
       setSpinning(false);
       console.error(e);
       toast.error('Something went wrong');
+    }
+  };
+
+  const handleFundContract = async () => {
+    const network = getNetwork();
+    // Token is in the same deployment account usually
+    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || 'SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP';
+    const tokenContractName = 'bitlot-token';
+    const lotteryContractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'bitlot-v2';
+    
+    // Amount: 100,000 BLOT (with 6 decimals = 100,000 * 1,000,000 = 100,000,000,000)
+    const amount = 100000000000;
+    const recipient = `${contractAddress}.${lotteryContractName}`;
+    
+    // Post-condition: User will transfer 100,000 BLOT
+    const stxAddress = user.profile.stxAddress.testnet || user.profile.stxAddress.mainnet;
+    const postConditions = [
+      Pc.principal(stxAddress).willSendEq(amount).ft(`${contractAddress}.${tokenContractName}`, 'bitlot-token')
+    ];
+
+    try {
+      await openContractCall({
+        network,
+        contractAddress,
+        contractName: tokenContractName,
+        functionName: 'transfer',
+        functionArgs: [
+            { type: 'uint', value: amount.toString() },     // amount
+            { type: 'principal', value: stxAddress },       // sender
+            { type: 'principal', value: recipient },        // recipient
+            { type: 'optional', value: null }               // memo
+        ],
+        postConditions,
+        onFinish: (data: any) => {
+          console.log('Fund transaction finished:', data);
+          toast.success('Funding transaction sent! Wait for confirmation.');
+        },
+        onCancel: () => {
+          toast.error('Funding cancelled');
+        },
+      });
+    } catch (e) {
+      console.error(e);
+      toast.error('Funding failed');
     }
   };
 
@@ -179,17 +230,6 @@ export default function LotteryInterface() {
           <button onClick={handleLogout} className="text-sm underline text-gray-400 mt-8">
             Disconnect
           </button>
-          
-          {/* Admin / Owner helper to fund the contract */}
-          <div className="mt-8 pt-8 border-t border-gray-800 flex flex-col items-center">
-             <p className="text-xs text-gray-500 mb-2">Admin Zone</p>
-             <button 
-                onClick={handleFundContract}
-                className="bg-blue-900/50 hover:bg-blue-900 text-blue-200 text-xs py-2 px-4 rounded border border-blue-800"
-             >
-                Fund Contract with 100k BLOT
-             </button>
-          </div>
         </div>
       )}
     </main>
