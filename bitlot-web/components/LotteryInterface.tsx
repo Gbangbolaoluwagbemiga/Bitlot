@@ -70,11 +70,27 @@ export default function LotteryInterface() {
   };
 
   const checkResult = async (txId: string) => {
+    let attempts = 0;
+    const maxAttempts = 60; // 2 minutes timeout
+
     // Poll for status
     const interval = setInterval(async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(interval);
+        setSpinning(false);
+        toast.error('Transaction timeout. Please check explorer.');
+        return;
+      }
+
       try {
         const res = await fetch(`http://localhost:3999/extended/v1/tx/${txId}`);
+        if (!res.ok) {
+           // If 404, it might not be propagated yet, just continue
+           return;
+        }
         const data = await res.json();
+        console.log('Poll tx status:', data.tx_status);
         
         if (data.tx_status === 'success') {
           clearInterval(interval);
@@ -110,14 +126,18 @@ export default function LotteryInterface() {
         } else if (data.tx_status === 'abort_by_response' || data.tx_status === 'abort_by_post_condition') {
             clearInterval(interval);
             setSpinning(false);
-            toast.error('Transaction failed on-chain');
+            console.error('Transaction failed:', data);
+            toast.error(`Transaction failed: ${data.tx_status}`);
         } else if (data.tx_status === 'pending') {
             // keep polling
         } else {
-            // unknown status, keep polling or timeout?
+            // unexpected status, but we can keep polling or fail if it's a final state
+            // For now, let's log it
+            console.log('Unknown status:', data.tx_status);
         }
       } catch (e) {
-        // ignore errors while pending (e.g. 404 if not propagated yet)
+        // ignore errors while pending (e.g. network error)
+        console.error('Polling error:', e);
       }
     }, 2000);
   };
