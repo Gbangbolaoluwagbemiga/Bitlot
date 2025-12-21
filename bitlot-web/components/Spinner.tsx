@@ -24,24 +24,33 @@ export default function Spinner({ spinning, result }: SpinnerProps) {
 
   useEffect(() => {
     if (spinning) {
+      // Continuous spinning loop
       const animate = () => {
-        setRotation((prev) => (prev + 15) % 360);
+        setRotation((prev) => prev + 15);
         requestRef.current = requestAnimationFrame(animate);
       };
       requestRef.current = requestAnimationFrame(animate);
     } else if (result !== null) {
+      // Stop spinning at the result
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      // Item i is at angle i * 45.
-      // To bring item i to top (0), we rotate by -i * 45.
-      // Adjust for the pointer position (top center).
-      // If we want item `result` to be at the top, we need to rotate the wheel such that 
-      // the center of the segment `result` aligns with 0deg (top).
-      // Each segment is 45deg. Center of segment 0 is at 22.5deg if we start at 0?
-      // Let's assume segment 0 starts at -22.5deg and ends at 22.5deg (centered at 0).
-      // Then segment i is centered at i * 45.
-      // To bring segment i to 0, we rotate by -i * 45.
-      const targetRotation = -(result * 45); 
-      setRotation(targetRotation);
+      
+      // Calculate target rotation to land on the result
+      // We want to land on - (result * 45) degrees
+      // But we need to make sure we rotate FORWARD to get there from current rotation
+      // Current rotation is `rotation`
+      // Target base is `targetBase = -(result * 45)`
+      // We want `final = targetBase + k * 360` such that `final > rotation + 720` (at least 2 full spins more)
+      
+      const targetBase = -(result * 45);
+      const currentMod = rotation % 360; // 0 to 360 (or negative)
+      
+      // Let's just add enough full rotations to the base target until it's comfortably ahead
+      let target = targetBase;
+      while (target < rotation + 720) {
+        target += 360;
+      }
+      
+      setRotation(target);
     }
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
@@ -56,8 +65,11 @@ export default function Spinner({ spinning, result }: SpinnerProps) {
         
         {/* Wheel */}
         <div 
-          className="w-full h-full relative transition-transform duration-[3s] ease-out"
-          style={{ transform: `rotate(${rotation}deg)` }}
+          className="w-full h-full relative"
+          style={{ 
+            transform: `rotate(${rotation}deg)`,
+            transition: spinning ? 'none' : 'transform 4s cubic-bezier(0.25, 0.1, 0.25, 1)' 
+          }}
         >
           {ITEMS.map((item, index) => (
             <div
@@ -67,31 +79,11 @@ export default function Spinner({ spinning, result }: SpinnerProps) {
                 transform: `rotate(${index * 45}deg)`,
               }}
             >
-              {/* Segment Background */}
-              {/* Using a conic gradient slice approach via clip-path is cleaner for wedges, 
-                  but CSS rotation of a simple rectangular div that is 50% width and masked works too.
-                  Alternatively, simpler approach:
-                  Just place the text. We can use a background color for the whole wheel or slices.
-              */}
-              
-              {/* Let's make actual wedges using conic-gradient on the container? 
-                  No, let's use skewed divs or just simple text placement with a colored background circle.
-                  Actually, styling individual wedges is tricky without SVG or clip-path.
-                  Let's try a simple approach: Text and a small colored dot/background.
-              */}
-              
               <div 
                 className="absolute top-0 left-1/2 -translate-x-1/2 h-1/2 w-24 origin-bottom flex flex-col items-center justify-start pt-4"
-                style={{ 
-                  // This div represents the top half wedge when unrotated.
-                  // We need to offset it properly?
-                  // Actually, sticking to the previous logic:
-                  // The container is rotated `index * 45`.
-                  // So this inner div is pointing "up" from the center for that segment.
-                }}
               >
                 <div 
-                    className="text-white font-bold text-lg flex flex-col items-center transform -rotate-0"
+                    className="text-white font-bold text-lg flex flex-col items-center"
                     style={{ textShadow: '1px 1px 2px black' }}
                 >
                   <span className="text-2xl mb-1">{item.label}</span>
