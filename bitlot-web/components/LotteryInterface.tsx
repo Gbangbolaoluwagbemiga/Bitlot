@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getUserSession, authenticate, getNetwork } from '@/lib/stacks';
 import Spinner from '@/components/Spinner';
 import { openContractCall } from '@stacks/connect';
+import { Toaster, toast } from 'sonner';
 
 export default function LotteryInterface() {
   const [mounted, setMounted] = useState(false);
@@ -37,24 +38,34 @@ export default function LotteryInterface() {
     const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || 'SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP';
     const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'bitlot-v2';
 
-    await openContractCall({
-      network,
-      contractAddress,
-      contractName,
-      functionName: 'play',
-      functionArgs: [],
-      onFinish: (data: any) => {
-        console.log('Transaction finished:', data);
-        setTxId(data.txId);
-        setTimeout(() => {
-            setSpinning(false);
-            checkResult(data.txId);
-        }, 2000);
-      },
-      onCancel: () => {
-        setSpinning(false);
-      },
-    });
+    try {
+      await openContractCall({
+        network,
+        contractAddress,
+        contractName,
+        functionName: 'play',
+        functionArgs: [],
+        onFinish: (data: any) => {
+          console.log('Transaction finished:', data);
+          setTxId(data.txId);
+          toast.info('Spinning the wheel... waiting for confirmation');
+          
+          // In a real app, we would wait for the chainhook or poll heavily.
+          // Here we just wait a bit and then start polling.
+          setTimeout(() => {
+              checkResult(data.txId);
+          }, 1000);
+        },
+        onCancel: () => {
+          setSpinning(false);
+          toast.error('Spin cancelled');
+        },
+      });
+    } catch (e) {
+      setSpinning(false);
+      console.error(e);
+      toast.error('Something went wrong');
+    }
   };
 
   const checkResult = async (txId: string) => {
@@ -63,31 +74,58 @@ export default function LotteryInterface() {
       try {
         const res = await fetch(`http://localhost:3999/extended/v1/tx/${txId}`);
         const data = await res.json();
+        
         if (data.tx_status === 'success') {
           clearInterval(interval);
           setSpinning(false);
+          
           // The result is in tx_result.
           // Format: (ok uX)
           const resultHex = data.tx_result.repr; // e.g. "(ok u5)"
           const match = resultHex.match(/\(ok u(\d+)\)/);
+          
           if (match) {
-            setResult(parseInt(match[1]));
+            const resultVal = parseInt(match[1]);
+            setResult(resultVal);
+            
+            // Rewards mapping matching Spinner items
+            // 0: 0, 1: 10, 2: 20, 3: 50, 4: 0, 5: 100, 6: 200, 7: 500
+            const rewards = [0, 10, 20, 50, 0, 100, 200, 500];
+            const wonAmount = rewards[resultVal];
+            
+            if (wonAmount > 0) {
+              toast.success(`You won ${wonAmount} BLOT tokens! 🎉`, {
+                duration: 5000,
+                style: { fontSize: '1.2em' }
+              });
+            } else {
+              toast('Better luck next time! 😢', {
+                duration: 5000,
+                icon: '💔',
+                style: { fontSize: '1.2em' }
+              });
+            }
           }
         } else if (data.tx_status === 'abort_by_response' || data.tx_status === 'abort_by_post_condition') {
             clearInterval(interval);
             setSpinning(false);
-            alert('Transaction failed');
+            toast.error('Transaction failed on-chain');
+        } else if (data.tx_status === 'pending') {
+            // keep polling
+        } else {
+            // unknown status, keep polling or timeout?
         }
       } catch (e) {
-        // ignore errors while pending
+        // ignore errors while pending (e.g. 404 if not propagated yet)
       }
-    }, 1000);
+    }, 2000);
   };
 
   if (!mounted) return null;
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900 text-white">
+    <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900 text-white relative">
+      <Toaster richColors position="bottom-center" />
       <h1 className="text-4xl font-bold mb-8">🎰 BitLot 🎰</h1>
       
       {!user ? (
@@ -99,18 +137,8 @@ export default function LotteryInterface() {
         </button>
       ) : (
         <div className="flex flex-col items-center gap-8">
-          <div className="text-xl">Welcome, {user.profile.stxAddress.testnet}</div>
+          <div className="text-xl">Welcome, {user.profile.stxAddress.testnet || user.profile.stxAddress.mainnet}</div>
           
-          <div className="grid grid-cols-4 gap-2 text-sm mb-4">
-            <div className="p-2 bg-gray-800 rounded">1: 10 BLOT</div>
-            <div className="p-2 bg-gray-800 rounded">2: 20 BLOT</div>
-            <div className="p-2 bg-gray-800 rounded">3: 50 BLOT</div>
-            <div className="p-2 bg-gray-800 rounded">5: 100 BLOT</div>
-            <div className="p-2 bg-gray-800 rounded">6: 200 BLOT</div>
-            <div className="p-2 bg-gray-800 rounded">7: 500 BLOT</div>
-            <div className="p-2 bg-gray-800 rounded col-span-2 text-red-400">0 & 4: No Reward</div>
-          </div>
-
           <Spinner spinning={spinning} result={result} />
           
           <button
@@ -121,18 +149,8 @@ export default function LotteryInterface() {
             {spinning ? 'Spinning...' : 'SPIN (0.01 STX)'}
           </button>
           
-          {result !== null && (
-            <div className="text-2xl font-bold text-yellow-400 animate-bounce text-center">
-              {result === 0 || result === 4 ? (
-                <span className="text-red-500">Better luck next time!</span>
-              ) : (
-                <span>You won {[0, 10, 20, 50, 0, 100, 200, 500][result]} BLOT tokens!</span>
-              )}
-            </div>
-          )}
-
           {txId && (
-            <div className="text-xs text-gray-400">
+            <div className="text-xs text-gray-400 mt-4">
               Tx: {txId}
             </div>
           )}
