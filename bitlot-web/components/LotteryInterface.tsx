@@ -34,8 +34,8 @@ export default function LotteryInterface() {
     setTxId('');
 
     const network = getNetwork();
-    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || 'ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM';
-    const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'bitlot';
+    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || 'SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP';
+    const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'bitlot-v2';
 
     await openContractCall({
       network,

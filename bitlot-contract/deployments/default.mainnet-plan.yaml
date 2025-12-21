@@ -9,9 +9,23 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: bitlot
+            contract-name: sip-010-trait-ft-standard
             expected-sender: SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP
-            cost: 15810
+            cost: 4370
+            path: contracts/sip-010-trait-ft-standard.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: bitlot-token
+            expected-sender: SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP
+            cost: 14380
+            path: contracts/bitlot-token.clar
+            anchor-block-only: true
+            clarity-version: 2
+        - contract-publish:
+            contract-name: bitlot-v2
+            expected-sender: SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP
+            cost: 25640
             path: contracts/bitlot.clar
             anchor-block-only: true
             clarity-version: 2
