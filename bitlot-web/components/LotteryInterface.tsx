@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { getUserSession, authenticate, getNetwork } from '@/lib/stacks';
 import Spinner from '@/components/Spinner';
 import { openContractCall } from '@stacks/connect';
-import { Pc } from '@stacks/transactions';
+import { Pc, PostConditionMode, uintCV, standardPrincipalCV, noneCV } from '@stacks/transactions';
 import { Toaster, toast } from 'sonner';
 
 export default function LotteryInterface() {
@@ -41,7 +41,11 @@ export default function LotteryInterface() {
 
     // Define post-condition: User transfers 0.01 STX (10,000 uSTX)
     // We use the address from the current network (testnet or mainnet)
-    const stxAddress = user.profile.stxAddress.testnet || user.profile.stxAddress.mainnet;
+    const appNetwork = process.env.NEXT_PUBLIC_NETWORK || 'mocknet';
+    const stxAddress = appNetwork === 'mainnet' 
+      ? user.profile.stxAddress.mainnet 
+      : user.profile.stxAddress.testnet;
+    
     const postConditions = [
       Pc.principal(stxAddress).willSendEq(10000).ustx()
     ];
@@ -53,6 +57,7 @@ export default function LotteryInterface() {
         contractName,
         functionName: 'play',
         functionArgs: [],
+        postConditionMode: PostConditionMode.Allow,
         postConditions,
         onFinish: (data: any) => {
           console.log('Transaction finished:', data);
@@ -100,10 +105,10 @@ export default function LotteryInterface() {
         contractName: tokenContractName,
         functionName: 'transfer',
         functionArgs: [
-            { type: 'uint', value: amount.toString() },     // amount
-            { type: 'principal', value: stxAddress },       // sender
-            { type: 'principal', value: recipient },        // recipient
-            { type: 'optional', value: null }               // memo
+            uintCV(amount),
+            standardPrincipalCV(stxAddress),
+            standardPrincipalCV(recipient),
+            noneCV()
         ],
         postConditions,
         onFinish: (data: any) => {
@@ -232,6 +237,20 @@ export default function LotteryInterface() {
           <button onClick={handleLogout} className="text-sm underline text-gray-400 mt-8">
             Disconnect
           </button>
+
+          {/* Admin Zone */}
+          <div className="mt-8 p-4 border border-gray-700 rounded-lg bg-gray-800 w-full max-w-md">
+            <h3 className="text-sm font-bold mb-2 text-center text-gray-400 uppercase tracking-wider">Admin Zone</h3>
+            <button
+                onClick={handleFundContract}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors text-sm"
+            >
+                Fund Contract (100k BLOT)
+            </button>
+            <p className="text-xs text-gray-500 mt-2 text-center">
+                Send 100,000 BLOT to contract for rewards liquidity.
+            </p>
+          </div>
         </div>
       )}
     </main>
