@@ -15,7 +15,7 @@ path = 'contracts/bitlot-token.clar'
 clarity_version = 2
 epoch = '2.5'
 
-[contracts.bitlot]
+[contracts.bitlot-v2]
 path = 'contracts/bitlot.clar'
 clarity_version = 2
 epoch = '2.5'
