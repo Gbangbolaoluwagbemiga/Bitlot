@@ -123,6 +123,8 @@ export default function LotteryInterface() {
   const checkResult = async (txId: string) => {
     let attempts = 0;
     const maxAttempts = 60; // 2 minutes timeout
+    const network = getNetwork();
+    const apiUrl = network.client.baseUrl; // Using client.baseUrl for StacksNetwork objects in @stacks/network v6+ or coreApiUrl in older
 
     // Poll for status
     const interval = setInterval(async () => {
@@ -135,7 +137,7 @@ export default function LotteryInterface() {
       }
 
       try {
-        const res = await fetch(`http://localhost:3999/extended/v1/tx/${txId}`);
+        const res = await fetch(`${apiUrl}/extended/v1/tx/${txId}`);
         if (!res.ok) {
            // If 404, it might not be propagated yet, just continue
            return;
