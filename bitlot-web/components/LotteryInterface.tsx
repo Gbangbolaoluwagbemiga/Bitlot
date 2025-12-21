@@ -179,6 +179,17 @@ export default function LotteryInterface() {
           <button onClick={handleLogout} className="text-sm underline text-gray-400 mt-8">
             Disconnect
           </button>
+          
+          {/* Admin / Owner helper to fund the contract */}
+          <div className="mt-8 pt-8 border-t border-gray-800 flex flex-col items-center">
+             <p className="text-xs text-gray-500 mb-2">Admin Zone</p>
+             <button 
+                onClick={handleFundContract}
+                className="bg-blue-900/50 hover:bg-blue-900 text-blue-200 text-xs py-2 px-4 rounded border border-blue-800"
+             >
+                Fund Contract with 100k BLOT
+             </button>
+          </div>
         </div>
       )}
     </main>
