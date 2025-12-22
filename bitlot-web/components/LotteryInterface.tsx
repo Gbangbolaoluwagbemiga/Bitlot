@@ -39,16 +39,10 @@ export default function LotteryInterface() {
     const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || 'SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP';
     const contractName = process.env.NEXT_PUBLIC_CONTRACT_NAME || 'bitlot-v2';
 
-    // Define post-condition: User transfers 0.01 STX (10,000 uSTX)
-    // We use the address from the current network (testnet or mainnet)
-    const appNetwork = process.env.NEXT_PUBLIC_NETWORK || 'mocknet';
-    const stxAddress = appNetwork === 'mainnet' 
-      ? user.profile.stxAddress.mainnet 
-      : user.profile.stxAddress.testnet;
-    
-    const postConditions = [
-      Pc.principal(stxAddress).willSendEq(10000).ustx()
-    ];
+    // We use PostConditionMode.Allow to handle the random nature of rewards
+    // and to avoid address derivation issues between mainnet/testnet wallets.
+    // The wallet will still prompt the user to confirm the 0.01 STX transfer.
+    const postConditions: any[] = [];
 
     try {
       await openContractCall({
