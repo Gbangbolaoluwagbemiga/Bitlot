@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { getUserSession, authenticate, getNetwork } from '@/lib/stacks';
 import Spinner from '@/components/Spinner';
 import { openContractCall } from '@stacks/connect';
-import { Pc, PostConditionMode, uintCV, standardPrincipalCV, noneCV } from '@stacks/transactions';
+import { Pc, PostConditionMode, uintCV, standardPrincipalCV, contractPrincipalCV, noneCV } from '@stacks/transactions';
 import { Toaster, toast } from 'sonner';
 
 export default function LotteryInterface() {
