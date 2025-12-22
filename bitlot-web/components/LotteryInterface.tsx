@@ -107,7 +107,7 @@ export default function LotteryInterface() {
         functionArgs: [
             uintCV(amount),
             standardPrincipalCV(stxAddress),
-            standardPrincipalCV(recipient),
+            contractPrincipalCV(contractAddress, lotteryContractName),
             noneCV()
         ],
         postConditions,
