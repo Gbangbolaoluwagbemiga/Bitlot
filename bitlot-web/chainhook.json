@@ -1,0 +1,34 @@
+{
+  "chain": "stacks",
+  "uuid": "bitlot-listener",
+  "name": "BitLot Listener",
+  "version": 1,
+  "networks": {
+    "testnet": {
+      "if_this": {
+        "scope": "contract_call",
+        "contract_identifier": "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.bitlot-v2",
+        "method": "play"
+      },
+      "then_that": {
+        "http_post": {
+          "url": "http://localhost:3000/api/chainhook",
+          "authorization_header": "Bearer secret-token"
+        }
+      }
+    },
+    "mainnet": {
+      "if_this": {
+        "scope": "contract_call",
+        "contract_identifier": "SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP.bitlot-v2",
+        "method": "play"
+      },
+      "then_that": {
+        "http_post": {
+          "url": "https://your-domain.com/api/chainhook",
+          "authorization_header": "Bearer secret-token"
+        }
+      }
+    }
+  }
+}
